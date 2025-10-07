@@ -36,7 +36,7 @@ def process_image(src_image_path):
     dest_image[corners>0.1*corners.max()]=[0,0,255]
     return dest_image 
 
-src_image_path = "C:\Coding\Python\ScrabbleSolver\\board1.png"
+src_image_path = "board2.jpg"
 print(src_image_path)
 dest_image = process_image(src_image_path)
 plt.imshow(dest_image)

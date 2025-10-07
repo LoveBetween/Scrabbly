@@ -43,7 +43,7 @@ def similarity(lines_segments):
     print("\nDisplacement Matrix:")
     print(displacements)
 
-img = cv2.imread("C:\Coding\Python\ScrabbleSolver\\board1.png")
+img = cv2.imread("board2.jpg")
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 edges = cv2.Canny(gray, 60, 160, apertureSize=3)
 lines = cv2.HoughLines(edges, 1, np.pi/180, 200)

@@ -5,7 +5,7 @@ import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # Grayscale, Gaussian blur, Otsu's threshold
-image = cv2.imread("C:\Coding\Python\ScrabbleSolver\\board2.jpg")
+image = cv2.imread("board2.jpg")
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blur = cv2.GaussianBlur(gray, (3,3), 0)
 thresh = cv2.threshold(blur, 100, 255, cv2.THRESH_BINARY)[1]

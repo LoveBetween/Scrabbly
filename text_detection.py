@@ -4,7 +4,7 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 
 from matplotlib import pyplot as plt
 
-image_path = r"C:\Coding\Python\ScrabbleSolver\board2.jpg"
+image_path = "board2.jpg"
 image = cv2.imread(image_path)
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blur = cv2.GaussianBlur(gray, (3,3), 0)
