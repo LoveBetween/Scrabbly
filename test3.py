@@ -45,7 +45,14 @@ def similarity(lines_segments):
 
 img = cv2.imread("board2.jpg")
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-edges = cv2.Canny(gray, 60, 160, apertureSize=3)
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+thresh = cv2.inRange(hsv, (0, 0, 0) , (179, 80, 360))
+invert = 255 - thresh
+
+cv2.imshow("detection de lignes", thresh)
+cv2.waitKey(0)
+
+edges = cv2.Canny(invert, 60, 160, apertureSize=5)
 lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
 
 line_segments = []
@@ -70,3 +77,6 @@ for x1, y1, x2, y2 in filtered_lines.astype(int):
     cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
 cv2.imwrite('linesDetected.jpg', img)
+cv2.imshow("detection de lignes", img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()

@@ -2,21 +2,28 @@ import cv2
 import numpy as np
 
 
-filter = False
+filter = True
 
 
 file_path = "board2.jpg"
 img = cv2.imread(file_path)
 
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+# hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+# thresh = cv2.inRange(hsv, (0, 0, 0) , (179, 90, 120))
+# gray = thresh
+
 edges = cv2.Canny(gray,140,200,apertureSize = 3)
 kernel = np.ones((3,3),np.uint8)
 edges = cv2.dilate(edges,kernel,iterations = 1)
 kernel = np.ones((5,5),np.uint8)
 edges = cv2.erode(edges,kernel,iterations = 1)
 cv2.imwrite('canny.jpg',edges)
+cv2.imshow("canny", edges)
 
-lines = cv2.HoughLines(edges,1,np.pi/180,150)
+cv2.waitKey(0)
+
+lines = cv2.HoughLines(edges,1,np.pi/180,140)
 
 if not lines.any():
     print('No lines were found')
@@ -84,3 +91,7 @@ for line in filtered_lines:
     cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
 
 cv2.imwrite('hough.jpg',img)
+cv2.imshow("img_contour", img)
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
