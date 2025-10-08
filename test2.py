@@ -8,12 +8,12 @@ filter = True
 file_path = "board2.jpg"
 img = cv2.imread(file_path)
 
-gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-# hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-# thresh = cv2.inRange(hsv, (0, 0, 0) , (179, 90, 120))
-# gray = thresh
+# gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+thresh = cv2.inRange(hsv, (0, 0, 0) , (179, 90, 120))
+gray = thresh
 
-edges = cv2.Canny(gray,140,200,apertureSize = 3)
+edges = cv2.Canny(gray,140,200,apertureSize = 7)
 kernel = np.ones((3,3),np.uint8)
 edges = cv2.dilate(edges,kernel,iterations = 1)
 kernel = np.ones((5,5),np.uint8)
