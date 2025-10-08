@@ -112,9 +112,44 @@ def find_edges(img, type_edge):
     cv2.imshow("img_contour", img)
 
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
     return filtered_lines
 
 file_path = "board2.jpg"
 img = cv2.imread(file_path)
-find_edges(img, "edges")
+filtered_lines = find_edges(img, "edges")
+
+from cell_detection import extract_grid_cells
+
+cells = extract_grid_cells(img, filtered_lines)
+print("number of cells :", len(cells))
+from textExtraction import cell_to_letter
+
+for cell in enumerate(cells):
+    index = cell[0]
+    cell_img = cell[1]
+
+    #test if cell has some beige
+    hsv = cv2.cvtColor(cell_img, cv2.COLOR_BGR2HSV)
+    beige_thresh = cv2.inRange(hsv, (14.5-5, 70-30, 217-10) , (14.5+5, 70+20, 217+20))
+    black_thresh = cv2.inRange(hsv, (0, 0, 0) , (360, 255, 120))
+    
+
+    # kernel = np.ones((3,3),np.uint8)
+    # black_thresh = cv2.dilate(black_thresh,kernel,iterations = 1)
+    # kernel = np.ones((5,5),np.uint8)
+    # black_thresh = cv2.erode(black_thresh,kernel,iterations = 1)
+
+    black_thresh = cv2.bitwise_not(black_thresh)
+
+
+    height, width = cell_img.shape[:2]
+    ratio = np.count_nonzero(beige_thresh)/(height*width)
+
+    if ratio > 0.1:
+        letter = cell_to_letter(black_thresh)
+        resized = cv2.resize(black_thresh, (height*5, width*5), interpolation = cv2.INTER_AREA)
+        cv2.imshow(letter, resized)
+        cv2.waitKey(0)
+        print(index//15,index%15, letter)
+
+cv2.destroyAllWindows()
