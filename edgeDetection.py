@@ -1,11 +1,24 @@
 import cv2
 import numpy as np
+import math
 
-def find_edges(img, type):
+def is_diagonal(angle_rad, tol=0.1):
+    # Normalize the angle to [0, 2π)
+    angle_rad = angle_rad % (2 * math.pi)
+
+    multiple_pi_4 = angle_rad / (math.pi / 4)
+    multiple_pi_2 = angle_rad / (math.pi / 2)
+
+    is_multiple_pi_4 = math.isclose(multiple_pi_4, round(multiple_pi_4), abs_tol=tol)
+    is_multiple_pi_2 = math.isclose(multiple_pi_2, round(multiple_pi_2), abs_tol=tol)
+
+    return is_multiple_pi_4 and not is_multiple_pi_2
+
+def find_edges(img, type_edge):
     filter = True
     cannyApertureSize = 7
 
-    if type == "board":
+    if type_edge == "board":
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         thresh = cv2.inRange(hsv, (0, 0, 0) , (179, 90, 120))
         gray = thresh
@@ -64,6 +77,8 @@ def find_edges(img, type):
                 if abs(rho_i - rho_j) < rho_threshold and abs(theta_i - theta_j) < theta_threshold:
                     line_flags[indices[j]] = False # if it is similar and have not been disregarded yet then drop it now
 
+
+
     print('number of Hough lines:', len(lines))
 
     filtered_lines = []
@@ -71,7 +86,9 @@ def find_edges(img, type):
     if filter:
         for i in range(len(lines)): # filtering
             if line_flags[i]:
-                filtered_lines.append(lines[i])
+                rho, theta = lines[i][0]
+                if not type_edge=="edges" or (not is_diagonal(theta, tol=0.1)):  # Only keep diagonals
+                    filtered_lines.append(lines[i])
 
         print('Number of filtered lines:', len(filtered_lines))
     else:
@@ -87,8 +104,9 @@ def find_edges(img, type):
         y1 = int(y0 + 1000*(a))
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
-
+     
         cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
+        
 
     cv2.imwrite('hough.jpg',img)
     cv2.imshow("img_contour", img)
@@ -99,4 +117,4 @@ def find_edges(img, type):
 
 file_path = "board2.jpg"
 img = cv2.imread(file_path)
-find_edges(img, "board")
+find_edges(img, "edges")
