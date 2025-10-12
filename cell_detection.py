@@ -3,22 +3,23 @@ import numpy as np
 import math
 import os
 
-def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=False):
-    """
-    Extracts grid cells from an image using horizontal and vertical Hough lines.
-
-    Parameters:
-        image (np.ndarray): Input image.
-        lines (list): List of lines in (rho, theta) format (from cv2.HoughLines).
-        save_dir (str): Directory to save the cells. If None, doesn't save.
-        angle_tol (float): Tolerance for detecting vertical/horizontal lines (in radians).
-        debug (bool): If True, draws lines and intersections on a copy of the image.
-
-    Returns:
-        cells (list of np.ndarray): Cropped cell images.
-    """
+def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=True):
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
+
+    def order_corners(pts):
+        """Given 4 points, return them in top-left, top-right, bottom-right, bottom-left order."""
+        pts = np.array(pts, dtype=np.float32)
+        s = pts.sum(axis=1)            # tl has smallest sum, br has largest
+        diff = np.diff(pts, axis=1)    # tr has smallest diff, bl has largest
+
+        ordered = np.zeros((4, 2), dtype=np.float32)
+        ordered[0] = pts[np.argmin(s)]       # Top-left
+        ordered[2] = pts[np.argmax(s)]       # Bottom-right
+        ordered[1] = pts[np.argmin(diff)]    # Top-right
+        ordered[3] = pts[np.argmax(diff)]    # Bottom-left
+
+        return ordered
 
     def line_to_points(rho, theta):
         a = np.cos(theta)
@@ -54,7 +55,7 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=False):
             horizontal_lines.append(line)
         elif abs(theta) < angle_tol or abs(theta - np.pi) < angle_tol:  # Vertical (theta ~ 0° or 180°)
             vertical_lines.append(line)
-
+    print(f"Horizontal: {len(horizontal_lines)} | Vertical: {len(vertical_lines)}")
     if debug:
         debug_img = image.copy()
         for l in horizontal_lines + vertical_lines:
@@ -72,6 +73,7 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=False):
     # Extract cells
     cells = []
     h, w = image.shape[:2]
+    normalized_size = (50, 50)  # Width x Height of output cell
 
     for i in range(len(horizontal_lines) - 1):
         for j in range(len(vertical_lines) - 1):
@@ -86,25 +88,35 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=False):
             br = compute_intersection(h_bottom, v_right)
 
             if None in (tl, tr, bl, br):
+                print(f"Skipping cell ({i}, {j}) due to None corner.")
                 continue
 
-            x_min = max(min(tl[0], bl[0]), 0)
-            x_max = min(max(tr[0], br[0]), w)
-            y_min = max(min(tl[1], tr[1]), 0)
-            y_max = min(max(bl[1], br[1]), h)
+            # Convert to float32 for perspective transform
+            src_pts = order_corners([tl, tr, br, bl])
+            dst_pts = np.array([
+                [0, 0],
+                [normalized_size[0] - 1, 0],
+                [normalized_size[0] - 1, normalized_size[1] - 1],
+                [0, normalized_size[1] - 1]
+            ], dtype=np.float32)
 
-            if x_max - x_min < 5 or y_max - y_min < 5:
-                continue  # skip very small/broken cells
+            try:
+                M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+                warped = cv2.warpPerspective(image, M, normalized_size)
+                cells.append(warped)
 
-            cell = image[y_min:y_max, x_min:x_max].copy()
-            cells.append(cell)
+                if save_dir:
+                    filename = os.path.join(save_dir, f"cell_{i}_{j}.png")
+                    cv2.imwrite(filename, warped)
 
-            if save_dir:
-                filename = os.path.join(save_dir, f"cell_{i}_{j}.png")
-                cv2.imwrite(filename, cell)
+                if debug:
+                    for pt in [tl, tr, br, bl]:
+                        cv2.circle(debug_img, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), -1)
+                    cv2.polylines(debug_img, [np.array([tl, tr, br, bl], dtype=np.int32)], True, (0, 0, 255), 1)
 
-            if debug:
-                cv2.rectangle(debug_img, (x_min, y_min), (x_max, y_max), (0, 0, 255), 1)
+            except cv2.error as e:
+                print(f"OpenCV error for cell ({i}, {j}): {e}")
+                continue
 
     if debug:
         cv2.imshow("Grid Debug", debug_img)

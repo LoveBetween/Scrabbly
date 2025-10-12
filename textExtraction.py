@@ -1,6 +1,7 @@
 import cv2
 import pytesseract
 import easyocr
+import os
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 reader = easyocr.Reader(['en'], gpu=False)
