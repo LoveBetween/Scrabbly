@@ -1,9 +1,7 @@
 import cv2
-import pytesseract
 import easyocr
 import os
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 reader = easyocr.Reader(['en'], gpu=False)
 
 # def cell_to_letter(img):
@@ -125,7 +123,6 @@ def cell_to_letter_easyocr3(hsv):
     if letters:
         # Return highest-confidence letter
         best = max(letters, key=lambda x: x[1])
-        print(letters)
         return best[0], invert  # best letter, and processed image
     else:
         return '', invert

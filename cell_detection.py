@@ -67,7 +67,6 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=False):
             vertical_lines.append(line)
         elif abs(theta - np.pi/2) < angle_tol:
             horizontal_lines.append(line)
-    print(f"Horizontal: {len(horizontal_lines)} | Vertical: {len(vertical_lines)}")
     if debug:
         debug_img = image.copy()
         for l in horizontal_lines + vertical_lines:

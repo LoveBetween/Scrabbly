@@ -12,7 +12,6 @@ def is_diagonal(angle_rad, tol=0.1):
     is_multiple_pi_2 = math.isclose(multiple_pi_2, round(multiple_pi_2), abs_tol=tol)
 
     return is_multiple_pi_4 and not is_multiple_pi_2
-    cv2.waitKey(0)
     return filtered_lines
 
 
@@ -33,10 +32,6 @@ def find_edges(img, type_edge):
     edges = cv2.dilate(edges,kernel,iterations = 1)
     kernel = np.ones((5,5),np.uint8)
     edges = cv2.erode(edges,kernel,iterations = 1)
-    cv2.imwrite('canny.jpg',edges)
-    cv2.imshow("canny", edges)
-
-    cv2.waitKey(0)
 
     lines = cv2.HoughLines(edges,1,np.pi/180,140)
 
@@ -105,7 +100,5 @@ def find_edges(img, type_edge):
         y2 = int(y0 - 1000*(a))
      
         cv2.line(img_copy,(x1,y1),(x2,y2),(0,0,255),2)
-    #cv2.imwrite('hough.jpg',img)
-    #cv2.imshow("img_contour", img)
 
-    return filtered_lines, img_copy
+    return filtered_lines, img_copy, edges
