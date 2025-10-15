@@ -3,7 +3,7 @@ import numpy as np
 import math
 import os
 
-def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=False):
+def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
 
@@ -123,11 +123,6 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=False):
                     filename = os.path.join(save_dir, f"cell_{i}_{j}.png")
                     cv2.imwrite(filename, warped)
 
-                # if debug:
-                #     for pt in [tl, tr, br, bl]:
-                #         cv2.circle(debug_img, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), -1)
-                #     cv2.polylines(debug_img, [np.array([tl, tr, br, bl], dtype=np.int32)], True, (0, 0, 255), 1)
-
                 if debug:
                     overlay = debug_img.copy()
                     if (i + j) % 2 == 0:
@@ -146,9 +141,4 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=False):
                 print(f"OpenCV error for cell ({i}, {j}): {e}")
                 continue
 
-    if debug:
-        cv2.imshow("Grid Debug", debug_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-    return cells
+    return cells, debug_img
