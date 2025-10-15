@@ -27,7 +27,7 @@ for cell in enumerate(cells):
 
     #test if cell has some beige
     hsv = cv2.cvtColor(cell_img, cv2.COLOR_BGR2HSV)
-    beige_thresh = cv2.inRange(hsv, (14.5-5, 70-30, 217-10) , (14.5+5, 70+20, 217+20))
+    beige_thresh = cv2.inRange(hsv, (14.5-5, 70-30, 217-40) , (14.5+5, 70+20, 217+30))
     # kernel = np.ones((3,3),np.uint8)
     # black_thresh = cv2.dilate(black_thresh,kernel,iterations = 1)
     # kernel = np.ones((5,5),np.uint8)
@@ -35,7 +35,7 @@ for cell in enumerate(cells):
     height, width = cell_img.shape[:2]
     ratio = np.count_nonzero(beige_thresh)/(height*width)
     
-    if ratio > 0.12:
+    if ratio > 0.15:
         letter, image_edited = cell_to_letter(hsv)
         # match_letter(hsv, "O")
         resized = cv2.resize(cell_img, (height*5, width*5), interpolation = cv2.INTER_AREA)
