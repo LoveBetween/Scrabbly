@@ -92,7 +92,7 @@ def find_edges(img, type_edge):
         print('Number of filtered lines:', len(filtered_lines))
     else:
         filtered_lines = lines
-
+    img_copy = img.copy()
     for line in filtered_lines:
         rho,theta = line[0]
         a = np.cos(theta)
@@ -104,8 +104,8 @@ def find_edges(img, type_edge):
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
      
-        cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
+        cv2.line(img_copy,(x1,y1),(x2,y2),(0,0,255),2)
     #cv2.imwrite('hough.jpg',img)
     #cv2.imshow("img_contour", img)
 
-    return filtered_lines
+    return filtered_lines, img_copy

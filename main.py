@@ -16,7 +16,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 file_path = "board2.jpg"
 img = cv2.imread(file_path)
-filtered_lines = find_edges(img, "edges")
+filtered_lines, debug_img = find_edges(img, "edges")
 
 cells = extract_grid_cells(img, filtered_lines)
 print("number of cells :", len(cells))
@@ -35,11 +35,11 @@ for cell in enumerate(cells):
     height, width = cell_img.shape[:2]
     ratio = np.count_nonzero(beige_thresh)/(height*width)
     
-    if ratio > 0.1:
+    if ratio > 0.12:
         letter, image_edited = cell_to_letter(hsv)
         # match_letter(hsv, "O")
         resized = cv2.resize(cell_img, (height*5, width*5), interpolation = cv2.INTER_AREA)
-        cv2.imshow(letter, resized)
+        cv2.imshow(f"{letter} {ratio:.2f}", resized)
         cv2.waitKey(0)
         print(f"ratio {ratio:.2f}, col {index//15 + 1}, line {index%15 + 1}, letter", index,  letter)
 

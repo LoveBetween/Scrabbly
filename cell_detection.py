@@ -3,7 +3,7 @@ import numpy as np
 import math
 import os
 
-def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=True):
+def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=False):
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
 
@@ -44,6 +44,18 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=True):
         px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / denom
         py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / denom
         return int(round(px)), int(round(py))
+    
+    def normalize_lines(lines):
+        normalized = []
+        for line in lines:
+            rho, theta = line[0]
+            if rho < 0:
+                rho = -rho
+                theta -= np.pi
+                if theta < 0:
+                    theta += 2 * np.pi  # keep theta positive
+            normalized.append([[rho, theta]])
+        return normalized
 
     # Classify lines
     horizontal_lines = []
@@ -51,10 +63,10 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=True):
 
     for line in lines:
         rho, theta = line[0]
-        if abs(theta - np.pi/2) < angle_tol:  # Horizontal (theta ~ 90°)
-            horizontal_lines.append(line)
-        elif abs(theta) < angle_tol or abs(theta - np.pi) < angle_tol:  # Vertical (theta ~ 0° or 180°)
+        if abs(theta) < angle_tol or abs(theta - np.pi) < angle_tol:
             vertical_lines.append(line)
+        elif abs(theta - np.pi/2) < angle_tol:
+            horizontal_lines.append(line)
     print(f"Horizontal: {len(horizontal_lines)} | Vertical: {len(vertical_lines)}")
     if debug:
         debug_img = image.copy()
@@ -67,6 +79,9 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=True):
         return []
 
     # Sort lines by position (rho)
+    horizontal_lines = normalize_lines(horizontal_lines)
+    vertical_lines = normalize_lines(vertical_lines)
+
     horizontal_lines.sort(key=lambda l: l[0][0])
     vertical_lines.sort(key=lambda l: l[0][0])
 
@@ -109,10 +124,24 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=0.1, debug=True):
                     filename = os.path.join(save_dir, f"cell_{i}_{j}.png")
                     cv2.imwrite(filename, warped)
 
+                # if debug:
+                #     for pt in [tl, tr, br, bl]:
+                #         cv2.circle(debug_img, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), -1)
+                #     cv2.polylines(debug_img, [np.array([tl, tr, br, bl], dtype=np.int32)], True, (0, 0, 255), 1)
+
                 if debug:
-                    for pt in [tl, tr, br, bl]:
-                        cv2.circle(debug_img, (int(pt[0]), int(pt[1])), 2, (255, 0, 0), -1)
-                    cv2.polylines(debug_img, [np.array([tl, tr, br, bl], dtype=np.int32)], True, (0, 0, 255), 1)
+                    overlay = debug_img.copy()
+                    if (i + j) % 2 == 0:
+                        color = (200, 200, 200)
+                    else:
+                        color = (0, 0, 0)
+
+                    pts = np.array([tl, tr, br, bl], dtype=np.int32)
+                    cv2.fillPoly(overlay, [pts], color)
+
+                    alpha = 0.4
+                    cv2.addWeighted(overlay, alpha, debug_img, 1 - alpha, 0, debug_img)
+                    cv2.polylines(debug_img, [pts], isClosed=True, color=(0, 0, 255), thickness=1)
 
             except cv2.error as e:
                 print(f"OpenCV error for cell ({i}, {j}): {e}")
