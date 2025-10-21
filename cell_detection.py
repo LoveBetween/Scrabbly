@@ -69,9 +69,6 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
             horizontal_lines.append(line)
     if debug:
         debug_img = image.copy()
-        for l in horizontal_lines + vertical_lines:
-            pt1, pt2 = line_to_points(*l[0])
-            cv2.line(debug_img, pt1, pt2, (0, 255, 0), 1)
 
     if len(horizontal_lines) < 2 or len(vertical_lines) < 2:
         print("Not enough lines to form a grid.")
@@ -83,6 +80,8 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
 
     horizontal_lines.sort(key=lambda l: l[0][0])
     vertical_lines.sort(key=lambda l: l[0][0])
+
+    lowest_line = horizontal_lines[len(horizontal_lines) - 1]
 
     # Extract cells
     cells = []
@@ -133,7 +132,7 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
                     pts = np.array([tl, tr, br, bl], dtype=np.int32)
                     cv2.fillPoly(overlay, [pts], color)
 
-                    alpha = 0.4
+                    alpha = 1
                     cv2.addWeighted(overlay, alpha, debug_img, 1 - alpha, 0, debug_img)
                     cv2.polylines(debug_img, [pts], isClosed=True, color=(0, 0, 255), thickness=1)
 
@@ -141,4 +140,4 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
                 print(f"OpenCV error for cell ({i}, {j}): {e}")
                 continue
 
-    return cells, debug_img
+    return cells, debug_img, lowest_line
