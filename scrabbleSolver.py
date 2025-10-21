@@ -208,7 +208,8 @@ def get_all_correct_placements(placements, letters, dawg):
     return [(placement, list(dawg.check_placement(placement, letters))) for placement in placements if list(dawg.check_placement(placement, letters))]
 
 def connections_nb(w):
-    return sum(1 for p_word in w['placement']['perpendicular'] if p_word.length > 1)
+    return sum(1 for p_word in w['placement']['perpendicular'] if len(p_word) > 1)
+
 
 from enum import Enum
 from functools import reduce
@@ -242,6 +243,6 @@ def filter_words(placements, filter_enum):
 def find_best_word(dawg, grid, letters, filter):
     all_placements = find_all_placements(grid)
     all_correct_placements = get_all_correct_placements(all_placements, letters, dawg)
-    best_word = filter_words(all_correct_placements, Filters.MOST_POINTS)
+    best_word = filter_words(all_correct_placements, filter)
     best_word['score'] = calculate_placement_score(best_word['placement'], best_word['word'], valeur_obj, standard_multi_grid)
     return best_word
