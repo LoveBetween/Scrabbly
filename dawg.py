@@ -136,7 +136,15 @@ class Dawg:
 
     def check_placement(self, placement, letters):
         def check_placement_rec(placement, node, letters, new_word, words, is_connected, letter_placed):
-            if node.final and is_connected and letter_placed and (len(placement['word']) <= len(new_word) and placement['next_letter'] == "_" or placement['word'][len(new_word)] == "_"):
+            if (
+                node.final and
+                is_connected and
+                letter_placed and
+                (
+                    (len(new_word) >= len(placement['word']) and placement['next_letter'] == "_") or
+                    (len(new_word) < len(placement['word']) and placement['word'][len(new_word)] == "_")
+                )
+            ):
                 words.add(new_word)
             if len(new_word) == len(placement['word']):
                 return

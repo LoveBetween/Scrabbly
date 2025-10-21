@@ -101,7 +101,7 @@ def cell_to_letter_easyocr3(hsv):
     # EasyOCR expects grayscale or 3-channel images
 
     letters = []
-    border_sizes = [0, 2, 4, 6]  # Pixels to crop from each side
+    border_sizes = [0, 4, 8, 16]  # Pixels to crop from each side
 
     for border in border_sizes:
         cropped = crop_borders(invert, border)
@@ -110,7 +110,7 @@ def cell_to_letter_easyocr3(hsv):
 
         results = reader.readtext(
             cropped,
-            allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZl',
+            allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
             detail=1,
             paragraph=False,
             min_size=1
