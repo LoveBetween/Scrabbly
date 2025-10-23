@@ -155,16 +155,32 @@ class Dawg:
                     check_placement_rec(placement, child, letters, new_word + next_letter, words, True, letter_placed)
             else:
                 for i, letter in enumerate(letters):
-                    if letter in node.edges or letter == "*":
-                        if len(placement['perpendicular'][len(new_word)]) < 2 or self.check_valid_word(placement['perpendicular'][len(new_word)].replace("_", letter)):
-                            if len(placement['perpendicular'][len(new_word)]) > 1:
-                                is_connected = True
+                    # For normal letters that exist in the DAWG
+                    if letter in node.edges:
+                        if len(placement['perpendicular'][len(new_word)]) < 2 or \
+                        self.check_valid_word(placement['perpendicular'][len(new_word)].replace("_", letter)):
+                            new_is_connected = is_connected or len(placement['perpendicular'][len(new_word)]) > 1
                             new_letters = letters[:i] + letters[i + 1:]
                             child = node.edges[letter]
-                            check_placement_rec(placement, child, new_letters, new_word + letter, words, is_connected, True)
+                            check_placement_rec(
+                                placement, child, new_letters,
+                                new_word + letter, words,
+                                new_is_connected, True
+                            )
+
+                    # Handle blank tile "*" — can represent ANY edge letter
+                    elif letter == "*":
+                        for possible_letter, child in node.edges.items():
+                            if len(placement['perpendicular'][len(new_word)]) < 2 or \
+                            self.check_valid_word(placement['perpendicular'][len(new_word)].replace("_", possible_letter)):
+                                new_is_connected = is_connected or len(placement['perpendicular'][len(new_word)]) > 1
+                                new_letters = letters[:i] + letters[i + 1:]
+                                check_placement_rec(
+                                    placement, child, new_letters,
+                                    new_word + possible_letter.lower(), words,
+                                    new_is_connected, True
+                                )
             return words
 
         words = set()
         return check_placement_rec(placement, self.root, letters, "", words, False, False)
-
-

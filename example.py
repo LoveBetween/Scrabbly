@@ -25,10 +25,10 @@ scrabble_board = [
     ["_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_", "_"]
 ]
 
-letters = ["S", "A", "L", "U", "T"]
+letters = ["S", "A", "L", "U", "A", "*"]
 #print(dawg.find_words(letters))
 start = time.time()
-best_word = find_best_word(dawg, scrabble_board, letters, Filters.LONGEST)
+best_word = find_best_word(dawg, scrabble_board, letters, Filters.MOST_POINTS)
 end = time.time()
 print("meilleur mot trouve en ", (end - start)*1000, "ms")
 print("(",best_word['placement']['x'], best_word['placement']['y'],")", best_word['word'])

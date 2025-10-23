@@ -1,96 +1,16 @@
 import cv2
 import easyocr
 import os
+import numpy as np
 
 reader = easyocr.Reader(['en'], gpu=False)
-
-# def cell_to_letter(img):
-#     #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#     gray = img
-#     blur = cv2.GaussianBlur(gray, (3,3), 0)
-#     thresh = cv2.threshold(blur, 100, 255, cv2.THRESH_BINARY)[1]
-#     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
-#     opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-#     invert = 255 - opening
-
-#     # Perform text extraction
-#     cfg = r'-l eng --oem 3 --psm 10 -c tessedit_char_whitelist="ABCDEFGHIJKLMNOPQRSTUVWXYZ" '
-#     data = pytesseract.image_to_string(invert, config = cfg)
-#     return data
-
-def cell_to_letter_easyocr(hsv):
-    #    black_thresh = cv2.bitwise_not(black_thresh)
-    #    black_thresh = cv2.inRange(hsv, (0, 0, 0) , (360, 255, 120))
-    #gray = cv2.cvtColor(hsv, cv2.COLOR_HSV2GRAY)  # assuming img is already grayscale
-    gray = hsv[:, :, 2]
-    #blur = cv2.GaussianBlur(gray, (3,3), 0)
-    thresh = cv2.threshold(gray, cv2.THRESH_OTSU, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    #kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
-    #opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-    invert = 255 - thresh
-
-    # EasyOCR expects 3-channel or grayscale images as numpy arrays (uint8)
-    # If grayscale, it's fine as is.
-    
-    letters = []
-    for contrast in [0.5, 0.7, 0.9]:
-        result = reader.readtext(
-            invert,
-            allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-            detail=1,
-            paragraph=False,
-            min_size=1,
-            adjust_contrast=contrast
-        )
-        if result:
-            letters.append(result[0][1])
-    if letters:
-        # Since psm 10 is single character, return first detected letter
-        return letters, invert
-    else:
-        return '', invert
-
-def adjust_contrast_brightness(img, alpha=1.0, beta=0):
-    """
-    alpha: contrast control (1.0 = original)
-    beta: brightness control (0 = original)
-    """
-    new_img = cv2.convertScaleAbs(img, alpha=alpha, beta=beta)
-    return new_img
-
-def cell_to_letter_easyocr2(hsv):
-    gray = hsv[:, :, 2]
-    thresh = cv2.threshold(
-        gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-    )[1]
-    invert = 255 - thresh
-
-    letters = []
-    for alpha in [0.9, 1.2, 1.5]:  # Adjust contrast
-        contrast_img = adjust_contrast_brightness(invert, alpha=alpha)
-        
-        result = reader.readtext(
-            contrast_img,
-            allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-            detail=1,
-            paragraph=False,
-            min_size=1
-        )
-        
-        if result:
-            letters.append(result[0][1])  # append the letter
-
-    if letters:
-        return letters, invert
-    else:
-        return '', invert
 
 def crop_borders(img, border_size):
     """Crop N pixels from all sides of the image."""
     h, w = img.shape[:2]
     return img[border_size:h - border_size, border_size:w - border_size]
 
-def cell_to_letter_easyocr3(hsv):
+def cell_to_letter_easyocr(hsv):
     # Use V channel from HSV (brightness)
     gray = hsv[:, :, 2]
     
@@ -126,3 +46,65 @@ def cell_to_letter_easyocr3(hsv):
         return best[0], invert  # best letter, and processed image
     else:
         return '', invert
+    
+def detect_circle_as_O(thresh_img):
+    contours, _ = cv2.findContours(thresh_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        perimeter = cv2.arcLength(cnt, True)
+        if perimeter == 0:
+            continue
+        circularity = 4 * np.pi * (area / (perimeter**2))
+        if 0.75 < circularity < 1.2:
+            return True
+    return False
+
+def cell_to_letter_easyocr_2(cell_img):
+    # Convert to grayscale
+    gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+    
+    # Adaptive threshold
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY_INV, 11, 2)
+    
+    # Dilate to strengthen thin letters
+    kernel = np.ones((2, 2), np.uint8)
+    dilated = cv2.dilate(thresh, kernel, iterations=1)
+
+    letters = []
+    border_sizes = [0, 2, 4, 6]  # pixels to crop from each side
+
+    for border in border_sizes:
+        cropped = crop_borders(dilated, border)
+        if cropped.shape[0] < 10 or cropped.shape[1] < 10:
+            continue
+
+        # Agrandissement pour OCR
+        scale = 3
+        resized = cv2.resize(cropped, (cropped.shape[1]*scale, cropped.shape[0]*scale),
+                             interpolation=cv2.INTER_CUBIC)
+
+        results = reader.readtext(
+            resized,
+            allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZIOF',
+            detail=1,
+            paragraph=False,
+            min_size=1
+        )
+
+        if results:
+            letter = results[0][1].upper()
+            conf = results[0][2]
+            letters.append((letter, conf))
+
+    if letters:
+        best = max(letters, key=lambda x: x[1])
+        letter_final = best[0]
+
+        # Vérification circulaire pour corriger les O mal détectés
+        if letter_final not in ['O', 'I', 'F'] and detect_circle_as_O(dilated):
+            letter_final = 'O'
+
+        return letter_final, dilated
+    else:
+        return '', dilated

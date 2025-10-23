@@ -178,14 +178,18 @@ def calculate_placement_score(placement, word, letter_points, multi_grid):
             cell_type = multi_grid[x + i][y]
         else:
             cell_type = multi_grid[x][y + i]
+        
+        letter = word[i]
+        is_blank = letter.islower()  # letters from blank are lowercase
+        
         if cell_type < 3:
             if placement['word'][i] == "_":
                 letters_used += 1
-                current_letter_points = letter_points[word[i]] * (cell_type + 1)
+                current_letter_points = 0 if is_blank else letter_points[letter.upper()] * (cell_type + 1)
             else:
-                current_letter_points = letter_points[word[i]]
+                current_letter_points = 0 if is_blank else letter_points[letter.upper()]
         elif cell_type < 5:
-            current_letter_points = letter_points[word[i]]
+            current_letter_points = 0 if is_blank else letter_points[letter.upper()]
             if placement['word'][i] == "_":
                 current_multi = cell_type - 1
                 multiplier = max(multiplier, cell_type - 1)
@@ -198,11 +202,14 @@ def calculate_placement_score(placement, word, letter_points, multi_grid):
                 if j == hole:
                     pp_score += current_letter_points
                 else:
-                    pp_score += letter_points[pp[j]]
+                    pp_letter = pp[j]
+                    pp_is_blank = pp_letter.islower()  # check if perpendicular letter is blank
+                    pp_score += 0 if pp_is_blank else letter_points[pp_letter.upper()]
             total_score += pp_score * current_multi
     total_score += word_score * multiplier
-    total_score = letters_used >= 7 and total_score + 50 or total_score
+    total_score = total_score + 50 if letters_used >= 7 else total_score
     return total_score
+
 
 def get_all_correct_placements(placements, letters, dawg):
     return [(placement, list(dawg.check_placement(placement, letters))) for placement in placements if list(dawg.check_placement(placement, letters))]

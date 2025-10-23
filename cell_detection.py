@@ -85,6 +85,7 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
 
     # Extract cells
     cells = []
+    cell_corners = []
     h, w = image.shape[:2]
     normalized_size = (50, 50)  # Width x Height of output cell
 
@@ -103,6 +104,8 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
             if None in (tl, tr, bl, br):
                 print(f"Skipping cell ({i}, {j}) due to None corner.")
                 continue
+
+            cell_corners.append([tl, tr, br, bl])
 
             # Convert to float32 for perspective transform
             src_pts = order_corners([tl, tr, br, bl])
@@ -140,4 +143,4 @@ def extract_grid_cells(image, lines, save_dir=None, angle_tol=1.0, debug=True):
                 print(f"OpenCV error for cell ({i}, {j}): {e}")
                 continue
 
-    return cells, debug_img, lowest_line
+    return cells, cell_corners, debug_img, lowest_line
